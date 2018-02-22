@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# usage: ./start <single config file> <local host:local port>
+
 exec docker run \
     --rm \
     --tty \
@@ -7,7 +9,8 @@ exec docker run \
     --device=/dev/net/tun \
     --name=openvpn-client \
     --cap-add=NET_ADMIN \
-    --publish 127.0.0.1:1081:1080 \
-    --volume "$(realpath "$1"):/etc/openvpn/:ro" \
-    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-    kizzx2/openvpn-client-socks
+    --publish $2:1984 \
+    --volume "/etc/openvpn:/etc/openvpn/:ro" \
+    --volume "$(realpath "$1"):/ovpn.conf:ro" \
+    --sysctl net.ipv6.conf.all.disable_ipv6=1 \
+    neoatlantis/openvpn-port-forwarding

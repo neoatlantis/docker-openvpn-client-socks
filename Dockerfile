@@ -8,18 +8,15 @@
 
 FROM alpine
 
-COPY sockd.sh /usr/local/bin/
+COPY boot-vpn.sh /usr/local/bin/
+COPY after-vpn-start.sh /usr/local/bin/
 
 RUN true \
     && echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-    && apk add --update-cache dante-server openvpn bash openresolv openrc \
+    && apk add --update-cache openvpn bash openresolv openrc socat \
     && rm -rf /var/cache/apk/* \
-    && chmod a+x /usr/local/bin/sockd.sh \
+    && chmod a+x /usr/local/bin/boot-vpn.sh \
+    && chmod a+x /usr/local/bin/after-vpn-start.sh \
     && true
 
-COPY sockd.conf /etc/
-
-ENTRYPOINT [ \
-    "/bin/bash", "-c", \
-    "cd /etc/openvpn && /usr/sbin/openvpn --config *.conf --script-security 2 --up /usr/local/bin/sockd.sh" \
-    ]
+ENTRYPOINT ["/usr/local/bin/boot-vpn.sh"]
