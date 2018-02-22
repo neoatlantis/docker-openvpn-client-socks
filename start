@@ -13,4 +13,4 @@ exec docker run \
     --volume "/etc/openvpn:/etc/openvpn/:ro" \
     --volume "$(realpath "$1"):/ovpn.conf:ro" \
     --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-    neoatlantis/openvpn-port-forwarding
+    neoatlantis/openvpn-port-forwarding $3
