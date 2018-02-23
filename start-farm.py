@@ -34,7 +34,7 @@ def buildStartCommand(
         arguments.append("-d")
     return ["docker", "run"] + arguments + [repoName] + [
         # following arguments are passed to ./boot-vpn.sh over "docker run" cmd
-        "60",         # --inactive  $1
+        "600",         # --inactive  $1
         "10",           # --ping      $2
         "30",           # --ping-exit $3
         remoteAddress   # --up "/usr/local/bin/after-vpn-start.sh $4"
