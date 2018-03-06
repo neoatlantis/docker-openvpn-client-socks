@@ -9,14 +9,20 @@ import subprocess
 def buildStartCommand(
     prefix="ovpnpf",
     name=None,
-    localAddress=None,
-    remoteAddress=None,
     configPath=None,
     daemon=False,
-    repoName="neoatlantis/openvpn-port-forwarding"
+    portForwardingEntry=False,
+    socks5Entry=False,
+    repoName="neoatlantis/openvpn-port-forwarding",
+    inactive=3600
 ):
     if not name: name = os.urandom(6).hex()
     dockerName = "%s-%s" % (prefix, name)
+
+    if portForwardingEntry:
+        portForwardingLocal, portForwardingRemote = portForwardingEntry
+    else:
+        portForwardingLocal, portForwardingRemote = None, None
     
     arguments = [
         "--rm",                     # remove container on exit
@@ -25,32 +31,40 @@ def buildStartCommand(
         "--device=/dev/net/tun",
         "--name=%s" % dockerName,
         "--cap-add=NET_ADMIN",
-        "--publish", "%s:1984" % localAddress,
         "--volume", """/etc/openvpn:/etc/openvpn/:ro""",
         "--volume", """%s:/ovpn.conf:ro""" % os.path.realpath(configPath),
         "--sysctl", "net.ipv6.conf.all.disable_ipv6=1",
     ]
-    if daemon:
-        arguments.append("-d")
-    return ["docker", "run"] + arguments + [repoName] + [
+    
+    if daemon: arguments.append("-d")
+    
+    if portForwardingLocal:
+        arguments += ["--publish", "%s:1984" % portForwardingLocal]
+    if socks5Entry:
+        arguments += ["--publish", "%s:1080" % socks5Entry]
+        
+    cmd = ["docker", "run"] + arguments + [repoName] + [
         # following arguments are passed to ./boot-vpn.sh over "docker run" cmd
-        "600",         # --inactive  $1
-        "10",           # --ping      $2
-        "30",           # --ping-exit $3
-        remoteAddress   # --up "/usr/local/bin/after-vpn-start.sh $4"
+        "%d" % inactive,          # --inactive  $1
+        "5",                      # --ping      $2
+        "30",                     # --ping-exit $3
     ]
+    if portForwardingRemote:
+        cmd += [
+            portForwardingRemote  # --up "/usr/local/bin/after-vpn-start.sh $4"
+        ]
+    else:
+        cmd += ["none"]
+
+    return cmd
+
+
 
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "CONFIG_PATH", help="Specify the configure file.")
-
-parser.add_argument(
-    "LOCAL_ADDRESS", help="The source host:port which will be forwarded.")
-
-parser.add_argument(
-    "DEST_ADDRESS", help="The host:port you want to connect via VPN.")
 
 parser.add_argument(
     "--debug-repo", default="neoatlantis/openvpn-port-forwarding",
@@ -65,21 +79,54 @@ parser.add_argument(
     "--daemon", "-d", default=False, action="store_true",
     help="Use this flag to make new instance run as a daemon in background.")
 
+action = parser.add_argument_group()
+
+action.add_argument(
+    "--socks5", "-s5",
+    help="""Specify a SOCKS5 proxy entry point. Traffic will be proxied using
+    VPN."""
+)
+
+action.add_argument(
+    "--port-forwarding", "-pf",
+    help="""Specify in format <SRC_ADDR>:<SRC_PORT>:<DEST_ADDR>:<DEST_PORT> to
+    enable port forwarding."""
+)
+
+
 args = parser.parse_args()
 
 if not os.path.isfile(args.CONFIG_PATH):
     print("Error: configure file %s does not exist." % args.CONFIG_PATH)
     exit(1)
 
+if not args.socks5 and not args.port_forwarding:
+    print("Error: either SOCKS5 or Port Forwarding or both must be choosen.")
+    exit(1)
+
+if args.port_forwarding:
+    pfArguments = args.port_forwarding.split(":")
+    if len(pfArguments) == 3:
+        pfArguments = "0.0.0.0" + pfArguments
+    if len(pfArguments) != 4:
+        print("Error: bad arguments for port forwarding.")
+        exit(1)
+    pfArguments = tuple(pfArguments)
+    pfArguments = (("%s:%s" % pfArguments[0:2]), ("%s:%s" % pfArguments[2:4]))
+else:
+    pfArguments = None
+
+
 command = buildStartCommand(
-    name=args.name, 
-    localAddress=args.LOCAL_ADDRESS,
-    remoteAddress=args.DEST_ADDRESS,
+    name=args.name,
     configPath=args.CONFIG_PATH,
     daemon=args.daemon,
+    socks5Entry=args.socks5,
+    portForwardingEntry=pfArguments,
     repoName=None if not args.debug_repo else args.debug_repo
 )
 
 print(" ".join(command))
 
-subprocess.check_output(command)
+p = subprocess.Popen(command)
+p.wait()
