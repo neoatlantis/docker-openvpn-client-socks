@@ -26,7 +26,6 @@ def buildStartCommand(
     
     arguments = [
         "--rm",                     # remove container on exit
-        "--tty",
         "--interactive",
         "--device=/dev/net/tun",
         "--name=%s" % dockerName,
