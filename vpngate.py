@@ -35,9 +35,8 @@ def getList():
         print("Failed fetching newest VPNGate list.")
         return None
 
-    text = r.text
-    open(cache, "w+").write(text)
-    return text
+    open(cache, "wb+").write(r.content)
+    return r.text 
 
 def read(l):
     lb = l.split(",")
