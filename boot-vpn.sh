@@ -7,6 +7,8 @@ echo "---- Starting VPN..."
 
 echo "Start ping monitor..."
 
+echo "/usr/local/bin/ping-monitor.py $1 &"
+
 /usr/local/bin/ping-monitor.py $1 &
 
 echo "Start OpenVPN..."

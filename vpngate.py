@@ -16,6 +16,9 @@ _BASEPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 LOCALPATH = lambda *i: os.path.join(_BASEPATH, *i)
 CACHE_TIME = 7200
 
+if len(sys.argv) < 2:
+    print("Usage: python3 vpngate.py <LOCAL_ADDR>:<LOCAL_PORT>")
+    exit(1)
 
 def getList():
     global CACHE_TIME
@@ -82,7 +85,7 @@ with tempfile.NamedTemporaryFile(mode="wb+", delete=True) as tempconfig:
         name=dockerName,
         configPath=tempconfig.name,
         daemon=False,
-        socks5Entry="0.0.0.0:1080"
+        socks5Entry=sys.argv[1]
     )
 
     print(" ".join(cmd))
