@@ -11,10 +11,11 @@ FROM alpine
 COPY sockd.conf /etc/
 COPY boot-vpn.sh /usr/local/bin/
 COPY after-vpn-start.sh /usr/local/bin/
+COPY ping-monitor.py /usr/local/bin/
 
 RUN true \
     && echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-    && apk add --update-cache openvpn dante-server bash openresolv openrc socat \
+    && apk add --update-cache openvpn dante-server bash openresolv openrc socat python \
     && rm -rf /var/cache/apk/* \
     && chmod a+x /usr/local/bin/boot-vpn.sh \
     && chmod a+x /usr/local/bin/after-vpn-start.sh \

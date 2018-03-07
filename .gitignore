@@ -1,2 +1,4 @@
 *.ovpn
 *.sw?
+*.cache
+__pycache__
