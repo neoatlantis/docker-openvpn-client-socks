@@ -26,7 +26,6 @@ def buildStartCommand(
     
     arguments = [
         "--rm",                     # remove container on exit
-        "--interactive",
         "--device=/dev/net/tun",
         "--name=%s" % name,
         "--cap-add=NET_ADMIN",
